@@ -2,7 +2,10 @@ var taskIdCounter = 0;
 var formEl = document.querySelector("#task-form");
 var tasksToDoEl = document.querySelector("#tasks-to-do");
 var pageContentEl = document.querySelector("#page-content");
+var tasksInProgressEl = document.querySelector("#tasks-in-progress");
+var tasksCompletedEl = document.querySelector("#tasks-completed");
 
+// handles the input at the top of the screen
 var taskFormHandler = function() {
     event.preventDefault();
     var taskNameInput = document.querySelector("input[name='task-name']").value;
@@ -16,16 +19,26 @@ var taskFormHandler = function() {
 
     formEl.reset();
 
-    // package up data as an object
-    var taskDataObj = {
-        name: taskNameInput,
-        type: taskTypeInput
-    };
+    // find out if this is an edit or new task
+    var isEdit = formEl.hasAttribute("data-task-id");
+    // if edit send it to the completeEditTask function
+    if (isEdit) {
+        var taskId = formEl.getAttribute("data-task-id");
+        completeEditTask(taskNameInput, taskTypeInput, taskId);
+    }
+    // else sent it to createtaskEl function
+    else {
+        var taskDataObj = {
+            name: taskNameInput,
+            type: taskTypeInput
+            };
 
-    // send it as an argument to createTaskEl
-    createTaskEl(taskDataObj);
- 
+        // send it as an argument to createTaskEl
+        createTaskEl(taskDataObj);
+    }
+
 };
+
 
 var createTaskEl = function(taskDataObj) {
    
@@ -47,7 +60,6 @@ var createTaskEl = function(taskDataObj) {
 
     // run the function to create task actions (buttons)
     var taskActionsEl = createTaskActions(taskIdCounter);
-    console.log(taskActionsEl)
 
     listItemEl.appendChild(taskActionsEl);
 
@@ -100,11 +112,11 @@ var createTaskActions = function(taskId) {
     return actionContainerEl
 };
 
+// listener for the add task button
 formEl.addEventListener("submit", taskFormHandler);
 
-
+// did the user click edit or delete
 var taskButtonHandler = function(event){
-
     var targetEl = event.target;
 
     if (targetEl.matches(".delete-btn")) {
@@ -118,11 +130,13 @@ var taskButtonHandler = function(event){
     }
 };
 
+// delete the selected task
 var deleteTask = function(taskId) {
     var taskSelected = document.querySelector(".task-item[data-task-id='" + taskId + "']");
     taskSelected.remove();
 };
 
+// begin edit the selected task
 var editTask = function(taskId) {
     var taskSelected = document.querySelector(".task-item[data-task-id='" + taskId + "']");
     var taskName = taskSelected.querySelector("h3.task-name").textContent;
@@ -134,5 +148,47 @@ var editTask = function(taskId) {
     formEl.setAttribute("data-task-id", taskId);
 };
 
+// finish editing the selected task
+var completeEditTask = function(taskName, taskType, taskId) {
+    
+    // find the matching task list item
+    var taskSelected = document.querySelector(".task-item[data-task-id='" + taskId + "']");
 
+    // set new values
+    taskSelected.querySelector("h3.task-name").textContent = taskName;
+    taskSelected.querySelector("span.task-type").textContent = taskType;
+    alert ("Task Updated!");
+    
+    // reset values
+    formEl.removeAttribute("data-task-id");
+    document.querySelector("#save-task").textContent = "Add Task";
+};
+
+// handle the task downdown list changes
+var taskStatusChangeHandler = function(event) {
+    // get the task item's id
+    var taskId = event.target.getAttribute("data-task-id");
+
+    // get the currently selected option's value and convert to lowercase
+    var statusValue = event.target.value.toLowerCase();
+
+    // find the parent task item element based on the id
+    var taskSelected = document.querySelector(".task-item[data-task-id='" + taskId + "']");
+
+    if (statusValue === "to do") {
+    tasksToDoEl.appendChild(taskSelected);
+    } 
+    else if (statusValue === "in progress") {
+    tasksInProgressEl.appendChild(taskSelected);
+    } 
+    else if (statusValue === "completed") {
+    tasksCompletedEl.appendChild(taskSelected);
+    }
+};
+
+// event listener for the click on the main task section delete and edit buttons
 pageContentEl.addEventListener("click", taskButtonHandler);
+
+// event listerer for the change on the dropdown list on the main task sectino
+pageContentEl.addEventListener("change", taskStatusChangeHandler);
+
